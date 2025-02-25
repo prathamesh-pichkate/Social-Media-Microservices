@@ -1,0 +1,7 @@
+1. Authentication service
+    npm i argon2 dotenv express express-rate-limit helmet ioredis joi jsonwebtoken mongoose rate-limit-redis winston
+
+
+
+2.API-gateway
+    npm i cors dotenv express express-http-proxy helmet ioredis jsonwebtoken winston
