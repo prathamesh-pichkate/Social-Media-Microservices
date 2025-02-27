@@ -1,42 +1,42 @@
 const logger = require('../utils/logger');
+const {validatePost} = require('../utils/validation');
+const Post = require('../models/post');
 
 // 1.Create Post:
 const createPost = async (req, res) => {
-    logger.info('Creating a new post api hits...');
+    logger.info("Create post endpoint hit");
     try {
-        const {content,mediaIds} = req.body;
-        if(!content || !mediaIds){
-            return res.status(400).json({
-                status: 'false',
-                message: 'Content or mediaIds is required'
-            })
-        }
-
-        // Create a new post
-        const newPost = {
-            content,
-            mediaIds:mediaIds || [],
-            user: req.user.userId
-        }
-
-        // Save the post to the database
-        const post = await Post.create(newPost);
-        await post.save();
-
-        res.status(201).json({
-            status: 'true',
-            message: 'Post created successfully',
-            data: post
+      //validate the schema
+      const { error } = validatePost(req.body);
+      if (error) {
+        logger.warn("Validation error", error.details[0].message);
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
         });
-
+      }
+      const { content, mediaIds } = req.body;
+      const newlyCreatedPost = new Post({
+        user: req.user.userId,
+        content,
+        mediaIds: mediaIds || [],
+      });
+  
+      await newlyCreatedPost.save();
+  
+      logger.info("Post created successfully", newlyCreatedPost);
+      res.status(201).json({
+        success: true,
+        message: "Post created successfully",
+      });
     } catch (error) {
-        logger.error('Error in creating a new post', error);
-        res.status(500).json({
-            status: 'false',
-            message: 'Error in creating a new post'
-        })
+      logger.error("Error creating post", error);
+      res.status(500).json({
+        success: false,
+        message: "Error creating post",
+      });
     }
-}
+  };
 
 // 2.GetAll Posts:
 const getAllPosts = async (req, res) => {
