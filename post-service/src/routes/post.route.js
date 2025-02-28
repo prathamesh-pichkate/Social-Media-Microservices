@@ -7,7 +7,10 @@ const router = express.Router();
 router.use(checkUserIsAuthenticated);
 
 router.post('/create-post', createPost);
-router.post('/get-all-posts', getAllPosts);
+router.get('/get-all-posts', getAllPosts);
+router.get('/:id',getPost);
+router.delete('/:id',deletePost);
+router.put('/:id',updatePost);
 
 module.exports = router;
 
