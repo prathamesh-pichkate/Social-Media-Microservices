@@ -42,7 +42,42 @@ const createPost = async (req, res) => {
 const getAllPosts = async (req, res) => {
     logger.info('Get all posts api hits...');
     try {
-        
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+
+      const startIdx = (page -1) * limit;
+
+      const cacheKey = `posts:${page}:${limit}`;
+      const cachedPosts = await req.redisClient.get(cacheKey);
+
+      if(cachedPosts){
+        logger.info("Posts fetched from redis cache");
+        return res.json(JSON.parse(cachedPosts));
+      }
+
+      const posts = await Post.find({})
+      .sort({createdAt : -1})
+      .skip(startIdx)
+      .limit(limit);
+      
+      //count of total documents
+      const totalPostCount = await Post.countDocuments();
+
+      const result = {
+        posts,
+        currentPage: page,
+        totalPages : Math.ceil(totalPostCount/limit),
+        totalPosts: totalPostCount
+      }
+
+      //save the posts in cache
+
+      await req.redisClient.setex(cacheKey, 300, JSON.stringify(result));
+
+      res.json(result);
+
+
+      
     } catch (error) {
         logger.error('Error in getting all posts', error);
         res.status(500).json({
