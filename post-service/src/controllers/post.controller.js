@@ -169,8 +169,10 @@ const updatePost = async (req, res) => {
 const deletePost = async (req, res) => {
     logger.info('Delete posts api hits...');
     try {
-        const postId = req.params.id;
-        const post = await Post.findById(postId);
+      const post = await Post.findOneAndDelete({
+        _id: req.params.id,
+        user: req.user.userId,
+      });
 
         if (!post) {
           return res.status(404).json({
@@ -179,11 +181,9 @@ const deletePost = async (req, res) => {
           });
         }
 
-        await Post.findByIdAndDelete(postId);
-
-        // Invalidate cache for the deleted post
-        const cacheKey = `post:${postId}`;
-        await req.redisClient.del(cacheKey);
+        await invalidateTheRedisCache(req,req.params.id);
+        
+        // await Post.findByIdAndDelete(postId);
 
         logger.info('Post deleted successfully');
         res.json({
